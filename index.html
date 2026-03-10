@@ -1,382 +1,384 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
-<meta charset="UTF-8" />
+<meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
 <title>🏍️ Motoboy Tracker</title>
-<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet"/>
 <style>
-  * { box-sizing: border-box; margin: 0; padding: 0; }
-  body { background: #0f1117; color: #e8e8e8; font-family: 'Syne', sans-serif; min-height: 100vh; padding-bottom: 60px; }
-  ::-webkit-scrollbar { width: 4px; }
-  ::-webkit-scrollbar-thumb { background: #f97316; border-radius: 2px; }
+*{box-sizing:border-box;margin:0;padding:0;}
+:root{
+  --bg:#0b0d14;--card:#13151f;--border:#1e2030;
+  --accent:#f97316;--green:#4ade80;--red:#f87171;
+  --muted:#555;--text:#e2e2e2;--sub:#888;
+}
+body{background:var(--bg);color:var(--text);font-family:'Outfit',sans-serif;min-height:100vh;padding-bottom:60px;}
+input,select,button{font-family:'Outfit',sans-serif;}
+::-webkit-scrollbar{width:4px;}
+::-webkit-scrollbar-thumb{background:var(--accent);border-radius:2px;}
+input::placeholder{color:var(--muted);}
 
-  /* Header */
-  .header {
-    background: linear-gradient(135deg, #1a1d27, #141620);
-    border-bottom: 1px solid #1e2130;
-    padding: 20px 24px;
-    position: sticky; top: 0; z-index: 10;
-    display: flex; align-items: center; justify-content: space-between; gap: 16px;
-    flex-wrap: wrap;
-  }
-  .logo { display: flex; align-items: center; gap: 10px; }
-  .logo-text { font-size: 22px; font-weight: 800; color: #f97316; }
-  .logo-sub { font-size: 11px; color: #555; font-family: 'JetBrains Mono', monospace; margin-top: 2px; }
-  .header-right { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
+@keyframes fadeUp{from{opacity:0;transform:translateY(18px)}to{opacity:1;transform:translateY(0)}}
+@keyframes spin{to{transform:rotate(360deg)}}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.4}}
 
-  /* Buttons */
-  .btn-orange {
-    background: #f97316; color: #fff; border: none; border-radius: 8px;
-    padding: 10px 20px; font-family: 'Syne', sans-serif; font-weight: 700;
-    font-size: 14px; cursor: pointer; transition: background 0.15s; white-space: nowrap;
-  }
-  .btn-orange:hover { background: #ea6c0a; }
-  .btn-ghost {
-    background: transparent; color: #888; border: 1px solid #2a2d3a;
-    border-radius: 8px; padding: 9px 16px; font-family: 'Syne', sans-serif;
-    font-weight: 600; font-size: 13px; cursor: pointer; transition: all 0.15s;
-  }
-  .btn-ghost:hover { border-color: #555; color: #ccc; }
-  .btn-red { background: #ef4444; }
-  .btn-red:hover { background: #dc2626; }
+/* AUTH */
+#authScreen{display:flex;align-items:center;justify-content:center;min-height:100vh;padding:20px;}
+.auth-card{
+  background:var(--card);border:1px solid var(--border);border-radius:22px;
+  padding:42px 36px;width:100%;max-width:390px;
+  box-shadow:0 32px 80px rgba(0,0,0,.6);animation:fadeUp .35s ease;
+}
+.logo-wrap{text-align:center;margin-bottom:32px;}
+.logo-emoji{font-size:48px;display:block;margin-bottom:10px;}
+.logo-title{font-size:26px;font-weight:800;color:var(--accent);letter-spacing:-.5px;}
+.logo-sub{font-size:11px;color:var(--muted);font-family:'JetBrains Mono',monospace;margin-top:4px;}
+.tabs{display:flex;background:#0f1118;border-radius:10px;padding:4px;margin-bottom:24px;}
+.tab{flex:1;padding:9px 0;border-radius:8px;border:none;cursor:pointer;font-weight:700;font-size:13px;transition:all .2s;}
+.tab.active{background:var(--accent);color:#fff;}
+.tab:not(.active){background:transparent;color:var(--muted);}
+.form-group{margin-bottom:14px;}
+.form-label{font-size:11px;font-weight:700;color:var(--muted);letter-spacing:1px;text-transform:uppercase;margin-bottom:5px;display:block;}
+.field{background:#0f1118;border:1px solid var(--border);border-radius:10px;color:var(--text);font-size:14px;padding:11px 14px;width:100%;transition:border-color .15s;outline:none;}
+.field:focus{border-color:var(--accent);}
+.error-box{background:#2a1515;border:1px solid #5a2020;border-radius:8px;padding:10px 14px;font-size:13px;color:var(--red);margin-bottom:14px;}
+.btn{border:none;border-radius:10px;padding:11px 20px;font-weight:700;font-size:14px;cursor:pointer;transition:opacity .15s;white-space:nowrap;}
+.btn:hover{opacity:.85;} .btn:active{opacity:.7;}
+.btn-primary{background:var(--accent);color:#fff;}
+.btn-ghost{background:transparent;color:var(--sub);border:1px solid var(--border);}
+.btn-danger{background:var(--red);color:#fff;}
+.btn-full{width:100%;padding:13px;font-size:15px;}
+.btn-sm{padding:7px 12px;font-size:13px;}
+.auth-footer{text-align:center;margin-top:18px;font-size:12px;color:var(--muted);}
 
-  /* Field */
-  .field {
-    background: #1a1d27; border: 1px solid #2a2d3a; border-radius: 8px;
-    color: #e8e8e8; font-family: 'Syne', sans-serif; font-size: 14px;
-    padding: 10px 14px; width: 100%; transition: border-color 0.15s;
-  }
-  .field:focus { outline: none; border-color: #f97316; }
-  .field::placeholder { color: #555; }
+/* APP */
+#appScreen{display:none;}
+.header{background:var(--card);border-bottom:1px solid var(--border);padding:14px 20px;position:sticky;top:0;z-index:10;}
+.header-inner{max-width:700px;margin:0 auto;display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;}
+.header-title{font-size:18px;font-weight:800;color:var(--accent);}
+.header-user{font-size:11px;color:var(--muted);font-family:'JetBrains Mono',monospace;margin-top:2px;}
+.header-right{display:flex;gap:8px;align-items:center;flex-wrap:wrap;}
+.sel{background:#0f1118;border:1px solid var(--border);border-radius:8px;color:var(--text);font-family:'Outfit',sans-serif;font-size:13px;padding:8px 12px;outline:none;cursor:pointer;}
+.sel:focus{border-color:var(--accent);}
+.main{max-width:700px;margin:0 auto;padding:0 20px;}
+.stats{display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;margin:20px 0;}
+.stat{background:var(--card);border:1px solid var(--border);border-radius:14px;padding:16px;}
+.stat.accent{background:linear-gradient(135deg,var(--accent),#ea580c);border:none;}
+.stat-icon{font-size:20px;} .stat-val{font-size:17px;font-weight:800;margin-top:6px;font-family:'JetBrains Mono',monospace;}
+.stat.accent .stat-val{color:#fff;} .stat-lbl{font-size:11px;margin-top:2px;color:var(--muted);font-weight:600;}
+.stat.accent .stat-lbl{color:rgba(255,255,255,.65);}
+.form-card{background:var(--card);border:1px solid var(--accent);border-radius:16px;padding:22px;margin-bottom:20px;animation:fadeUp .25s ease;}
+.form-card-title{font-weight:700;margin-bottom:16px;font-size:15px;}
+.form-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;}
+.form-actions{display:flex;gap:10px;margin-top:16px;justify-content:flex-end;}
+.list-card{background:var(--card);border:1px solid var(--border);border-radius:16px;overflow:hidden;}
+.delivery-row{display:flex;align-items:center;padding:14px 16px;gap:12px;border-bottom:1px solid var(--border);transition:background .15s;}
+.delivery-row:last-child{border-bottom:none;} .delivery-row:hover{background:#191c29;}
+.date-badge{min-width:40px;background:#0f1118;border-radius:8px;padding:6px 4px;text-align:center;font-family:'JetBrains Mono',monospace;font-size:12px;font-weight:600;color:var(--accent);line-height:1.3;flex-shrink:0;}
+.route{flex:1;font-size:14px;font-weight:500;display:flex;align-items:center;gap:6px;flex-wrap:wrap;min-width:0;}
+.route-from{color:var(--sub);} .route-arrow{color:var(--accent);font-size:11px;}
+.value-cell{font-family:'JetBrains Mono',monospace;font-weight:700;font-size:14px;color:var(--green);min-width:78px;text-align:right;}
+.row-btns{display:flex;gap:2px;flex-shrink:0;}
+.icon-btn{background:none;border:none;cursor:pointer;padding:5px 7px;border-radius:6px;font-size:14px;transition:background .15s;}
+.icon-btn:hover{background:var(--border);}
+.empty{padding:52px;text-align:center;color:var(--muted);}
+.empty-icon{font-size:36px;margin-bottom:12px;}
+.total-bar{display:flex;justify-content:space-between;align-items:center;margin-top:14px;padding:14px 18px;background:var(--card);border-radius:12px;border:1px solid var(--border);}
+.total-lbl{color:var(--sub);font-size:13px;} .total-val{font-family:'JetBrains Mono',monospace;font-weight:800;font-size:16px;color:var(--accent);}
+.modal-bg{position:fixed;inset:0;background:rgba(0,0,0,.75);display:none;align-items:center;justify-content:center;z-index:100;}
+.modal-bg.open{display:flex;}
+.modal{background:var(--card);border:1px solid var(--border);border-radius:18px;padding:32px;max-width:300px;width:90%;text-align:center;animation:fadeUp .25s ease;}
+.modal-icon{font-size:38px;margin-bottom:12px;} .modal-title{font-weight:700;margin-bottom:8px;font-size:16px;}
+.modal-sub{color:var(--muted);font-size:13px;margin-bottom:22px;} .modal-actions{display:flex;gap:10px;justify-content:center;}
+.spinner{width:28px;height:28px;border:3px solid var(--border);border-top-color:var(--accent);border-radius:50%;animation:spin .7s linear infinite;margin:40px auto;}
 
-  /* Main */
-  .main { max-width: 680px; margin: 0 auto; padding: 0 20px; }
-
-  /* Stats */
-  .stats { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 12px; margin: 20px 0; }
-  .stat-card {
-    background: #1a1d27; border: 1px solid #1e2130; border-radius: 12px; padding: 14px 16px;
-  }
-  .stat-card.accent { background: linear-gradient(135deg, #f97316, #ea580c); border: none; }
-  .stat-icon { font-size: 18px; }
-  .stat-value { font-size: 16px; font-weight: 800; margin-top: 4px; font-family: 'JetBrains Mono', monospace; }
-  .stat-card.accent .stat-value { color: #fff; }
-  .stat-label { font-size: 11px; color: #555; font-weight: 600; margin-top: 2px; }
-  .stat-card.accent .stat-label { color: rgba(255,255,255,0.7); }
-
-  /* Form */
-  .form-card {
-    background: #1a1d27; border: 1px solid #f97316; border-radius: 14px;
-    padding: 20px; margin-bottom: 20px; display: none;
-  }
-  .form-card.open { display: block; }
-  .form-title { font-weight: 700; margin-bottom: 16px; font-size: 15px; }
-  .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
-  .form-label { font-size: 11px; color: #888; margin-bottom: 4px; font-weight: 600; }
-  .form-actions { display: flex; gap: 10px; margin-top: 16px; justify-content: flex-end; }
-
-  /* List */
-  .list-card {
-    background: #1a1d27; border: 1px solid #1e2130; border-radius: 14px; overflow: hidden;
-  }
-  .delivery-row {
-    display: flex; align-items: center; padding: 14px 16px; gap: 12px;
-    border-bottom: 1px solid #1e2130; transition: background 0.15s; cursor: default;
-  }
-  .delivery-row:last-child { border-bottom: none; }
-  .delivery-row:hover { background: #1e2130; }
-  .date-badge {
-    min-width: 38px; background: #141620; border-radius: 8px; padding: 6px 4px;
-    text-align: center; font-family: 'JetBrains Mono', monospace; font-size: 12px;
-    font-weight: 600; color: #f97316; line-height: 1.3; flex-shrink: 0;
-  }
-  .route { flex: 1; font-size: 14px; font-weight: 600; display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
-  .route-from { color: #aaa; }
-  .route-arrow { color: #f97316; font-size: 12px; }
-  .value { font-family: 'JetBrains Mono', monospace; font-weight: 600; font-size: 14px; color: #4ade80; min-width: 72px; text-align: right; }
-  .row-actions { display: flex; gap: 2px; }
-  .icon-btn {
-    background: none; border: none; cursor: pointer; padding: 4px 6px;
-    border-radius: 4px; font-size: 14px; transition: background 0.15s;
-  }
-  .icon-btn:hover { background: #2a2d3a; }
-
-  /* Footer total */
-  .total-bar {
-    display: flex; justify-content: space-between; align-items: center;
-    margin-top: 16px; padding: 14px 20px; background: #1a1d27;
-    border-radius: 12px; border: 1px solid #1e2130;
-  }
-  .total-label { color: #888; font-size: 13px; }
-  .total-value { font-family: 'JetBrains Mono', monospace; font-weight: 700; font-size: 16px; color: #f97316; }
-
-  /* Modal */
-  .modal-overlay {
-    position: fixed; inset: 0; background: rgba(0,0,0,0.7);
-    display: none; align-items: center; justify-content: center; z-index: 100;
-  }
-  .modal-overlay.open { display: flex; }
-  .modal {
-    background: #1a1d27; border: 1px solid #2a2d3a; border-radius: 14px;
-    padding: 28px; max-width: 300px; width: 90%; text-align: center;
-  }
-  .modal-icon { font-size: 32px; margin-bottom: 12px; }
-  .modal-title { font-weight: 700; margin-bottom: 8px; }
-  .modal-sub { color: #888; font-size: 13px; margin-bottom: 20px; }
-  .modal-actions { display: flex; gap: 10px; justify-content: center; }
-
-  .empty { padding: 40px; text-align: center; color: #555; }
-
-  @media (max-width: 480px) {
-    .stats { grid-template-columns: 1fr 1fr; }
-    .form-grid { grid-template-columns: 1fr; }
-    .stat-card:last-child { grid-column: span 2; }
-  }
+@media(max-width:500px){
+  .stats{grid-template-columns:1fr 1fr;}
+  .stats .stat:nth-child(2){grid-column:span 2;}
+  .form-grid{grid-template-columns:1fr;}
+  .auth-card{padding:30px 22px;}
+}
 </style>
 </head>
 <body>
 
-<!-- Header -->
-<div class="header">
-  <div class="logo">
-    <span style="font-size:26px">🏍️</span>
-    <div>
-      <div class="logo-text">Motoboy</div>
-      <div class="logo-sub">controle de corridas</div>
+<!-- AUTH -->
+<div id="authScreen">
+  <div class="auth-card">
+    <div class="logo-wrap">
+      <span class="logo-emoji">🏍️</span>
+      <div class="logo-title">Motoboy Tracker</div>
+      <div class="logo-sub">controle de corridas · nuvem</div>
     </div>
-  </div>
-  <div class="header-right">
-    <select class="field" id="filterMonth" style="width:auto;font-size:13px" onchange="render()">
-      <option value="">Todos os meses</option>
-    </select>
-    <button class="btn-orange" onclick="openForm()">+ Corrida</button>
+    <div class="tabs">
+      <button class="tab active" id="tabLogin" onclick="switchTab('login')">Entrar</button>
+      <button class="tab" id="tabRegister" onclick="switchTab('register')">Cadastrar</button>
+    </div>
+    <div id="authError" class="error-box" style="display:none"></div>
+    <div class="form-group">
+      <label class="form-label">E-mail</label>
+      <input class="field" id="authEmail" type="email" placeholder="seu@email.com" onkeydown="if(event.key==='Enter')doAuth()"/>
+    </div>
+    <div class="form-group">
+      <label class="form-label">Senha</label>
+      <input class="field" id="authPass" type="password" placeholder="••••••••" onkeydown="if(event.key==='Enter')doAuth()"/>
+    </div>
+    <button class="btn btn-primary btn-full" id="authBtn" onclick="doAuth()">Entrar</button>
+    <div class="auth-footer">🔒 Dados salvos com segurança no Firebase</div>
   </div>
 </div>
 
-<div class="main">
-
-  <!-- Stats -->
-  <div class="stats">
-    <div class="stat-card">
-      <div class="stat-icon">📦</div>
-      <div class="stat-value" id="statCount">0</div>
-      <div class="stat-label">Corridas</div>
-    </div>
-    <div class="stat-card accent">
-      <div class="stat-icon">💰</div>
-      <div class="stat-value" id="statTotal">R$ 0</div>
-      <div class="stat-label">Total</div>
-    </div>
-    <div class="stat-card">
-      <div class="stat-icon">📊</div>
-      <div class="stat-value" id="statAvg">—</div>
-      <div class="stat-label">Média</div>
+<!-- APP -->
+<div id="appScreen">
+  <div class="header">
+    <div class="header-inner">
+      <div style="display:flex;align-items:center;gap:10px;">
+        <span style="font-size:24px">🏍️</span>
+        <div>
+          <div class="header-title">Motoboy</div>
+          <div class="header-user" id="headerUser"></div>
+        </div>
+      </div>
+      <div class="header-right">
+        <select class="sel" id="filterMonth" onchange="renderList()">
+          <option value="">Todos os meses</option>
+        </select>
+        <button class="btn btn-primary btn-sm" onclick="openForm()">+ Corrida</button>
+        <button class="btn btn-ghost btn-sm" onclick="doLogout()">Sair</button>
+      </div>
     </div>
   </div>
 
-  <!-- Form -->
-  <div class="form-card" id="formCard">
-    <div class="form-title" id="formTitle">➕ Nova corrida</div>
-    <div class="form-grid">
-      <div>
-        <div class="form-label">DATA</div>
-        <input type="date" class="field" id="fDate"/>
+  <div class="main">
+    <div class="stats">
+      <div class="stat"><div class="stat-icon">📦</div><div class="stat-val" id="statCount">0</div><div class="stat-lbl">Corridas</div></div>
+      <div class="stat accent"><div class="stat-icon">💰</div><div class="stat-val" id="statTotal">R$ 0</div><div class="stat-lbl">Total</div></div>
+      <div class="stat"><div class="stat-icon">📊</div><div class="stat-val" id="statAvg">—</div><div class="stat-lbl">Média</div></div>
+    </div>
+
+    <div class="form-card" id="formCard" style="display:none">
+      <div class="form-card-title" id="formTitle">➕ Nova corrida</div>
+      <div class="form-grid">
+        <div><label class="form-label">Data</label><input class="field" id="fDate" type="date"/></div>
+        <div><label class="form-label">Valor (R$)</label><input class="field" id="fValor" type="text" placeholder="52,00"/></div>
+        <div><label class="form-label">Origem</label><input class="field" id="fOrigem" type="text" placeholder="Ex: Bento Ribeiro"/></div>
+        <div><label class="form-label">Destino</label><input class="field" id="fDestino" type="text" placeholder="Ex: Botafogo"/></div>
       </div>
-      <div>
-        <div class="form-label">VALOR (R$)</div>
-        <input type="text" class="field" id="fValor" placeholder="52,00"/>
-      </div>
-      <div>
-        <div class="form-label">ORIGEM</div>
-        <input type="text" class="field" id="fOrigem" placeholder="Ex: Bento Ribeiro"/>
-      </div>
-      <div>
-        <div class="form-label">DESTINO</div>
-        <input type="text" class="field" id="fDestino" placeholder="Ex: Botafogo"/>
+      <div class="form-actions">
+        <button class="btn btn-ghost" onclick="closeForm()">Cancelar</button>
+        <button class="btn btn-primary" onclick="saveDelivery()">Salvar</button>
       </div>
     </div>
-    <div class="form-actions">
-      <button class="btn-ghost" onclick="closeForm()">Cancelar</button>
-      <button class="btn-orange" onclick="saveDelivery()">Salvar</button>
+
+    <div class="list-card" id="listCard"><div class="spinner"></div></div>
+    <div class="total-bar" id="totalBar" style="display:none">
+      <span class="total-lbl" id="totalLbl"></span>
+      <span class="total-val" id="totalVal"></span>
     </div>
   </div>
-
-  <!-- List -->
-  <div class="list-card" id="listCard"></div>
-
-  <!-- Total bar -->
-  <div class="total-bar" id="totalBar" style="display:none">
-    <span class="total-label" id="totalLabel"></span>
-    <span class="total-value" id="totalValue"></span>
-  </div>
-
 </div>
 
-<!-- Delete modal -->
-<div class="modal-overlay" id="deleteModal">
+<!-- Delete Modal -->
+<div class="modal-bg" id="deleteModal">
   <div class="modal">
     <div class="modal-icon">🗑️</div>
     <div class="modal-title">Excluir corrida?</div>
     <div class="modal-sub">Essa ação não pode ser desfeita.</div>
     <div class="modal-actions">
-      <button class="btn-ghost" onclick="closeDeleteModal()">Cancelar</button>
-      <button class="btn-orange btn-red" onclick="confirmDelete()">Excluir</button>
+      <button class="btn btn-ghost" onclick="closeDeleteModal()">Cancelar</button>
+      <button class="btn btn-danger" onclick="confirmDelete()">Excluir</button>
     </div>
   </div>
 </div>
 
-<script>
-let deliveries = [
-  { id: 1, date: "2025-02-23", origem: "Bento Ribeiro", destino: "Botafogo", valor: 52 },
-  { id: 2, date: "2025-02-26", origem: "Bento Ribeiro", destino: "Botafogo", valor: 52 },
-  { id: 3, date: "2025-02-27", origem: "Bento Ribeiro", destino: "Nova América", valor: 37 },
-  { id: 4, date: "2025-03-02", origem: "Botafogo", destino: "Bento Ribeiro", valor: 52 },
-  { id: 5, date: "2025-03-03", origem: "Bento Ribeiro", destino: "Lagoa", valor: 55 },
-  { id: 6, date: "2025-03-03", origem: "Nova América", destino: "Bento Ribeiro", valor: 37 },
-  { id: 7, date: "2025-03-03", origem: "Bento Ribeiro", destino: "Pc da Bandeira / Botafogo", valor: 65 },
-  { id: 8, date: "2025-03-04", origem: "Bento Ribeiro", destino: "Nova América", valor: 45 },
-  { id: 9, date: "2025-03-05", origem: "Bento Ribeiro", destino: "Tijuca", valor: 37 },
-];
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
+import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut, onAuthStateChanged }
+  from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
+import { getDatabase, ref, push, remove, onValue, update }
+  from "https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js";
 
-let editId = null;
-let deleteId = null;
+const firebaseConfig = {
+  apiKey: "AIzaSyBOMfjYMxUZ7Pdh_XwiRuTY3VkH9tuzgEk",
+  authDomain: "motoboy-track-36d4a.firebaseapp.com",
+  databaseURL: "https://motoboy-track-36d4a-default-rtdb.firebaseio.com",
+  projectId: "motoboy-track-36d4a",
+  storageBucket: "motoboy-track-36d4a.firebasestorage.app",
+  messagingSenderId: "383124469638",
+  appId: "1:383124469638:web:a08298bae557360f355e07"
+};
 
-function brl(v) {
-  return v.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+const app  = initializeApp(firebaseConfig);
+const auth = getAuth(app);
+const db   = getDatabase(app);
+
+let currentUser = null;
+let deliveries  = {};
+let editKey     = null;
+let deleteKey   = null;
+let dbOff       = null;
+
+const brl     = v => Number(v).toLocaleString('pt-BR',{style:'currency',currency:'BRL'});
+const fmtDate = d => { const [,m,day] = d.split('-'); return `${day}/${m}`; };
+const todayStr= () => new Date().toISOString().slice(0,10);
+const $       = id => document.getElementById(id);
+const esc     = s => String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+
+// ── Auth state ─────────────────────────────────────────────
+onAuthStateChanged(auth, user => {
+  if (user) { currentUser = user; showApp(user); }
+  else      { currentUser = null; if(dbOff){dbOff();dbOff=null;} showAuth(); }
+});
+
+// ── Auth ───────────────────────────────────────────────────
+window.switchTab = mode => {
+  $('tabLogin').classList.toggle('active', mode==='login');
+  $('tabRegister').classList.toggle('active', mode==='register');
+  $('authBtn').textContent  = mode==='login' ? 'Entrar' : 'Criar conta';
+  $('authBtn').dataset.mode = mode;
+  $('authError').style.display = 'none';
+};
+$('authBtn').dataset.mode = 'login';
+
+window.doAuth = async () => {
+  const email = $('authEmail').value.trim();
+  const pass  = $('authPass').value;
+  const mode  = $('authBtn').dataset.mode;
+  $('authError').style.display = 'none';
+  $('authBtn').textContent = 'Aguarde...';
+  $('authBtn').disabled = true;
+  try {
+    if (mode === 'login') await signInWithEmailAndPassword(auth, email, pass);
+    else {
+      if (!email||!pass) throw {code:'empty'};
+      await createUserWithEmailAndPassword(auth, email, pass);
+    }
+  } catch(err) {
+    const msgs = {
+      'auth/invalid-email':'E-mail inválido.',
+      'auth/user-not-found':'Usuário não encontrado.',
+      'auth/wrong-password':'Senha incorreta.',
+      'auth/invalid-credential':'E-mail ou senha incorretos.',
+      'auth/email-already-in-use':'E-mail já cadastrado.',
+      'auth/weak-password':'Senha muito fraca (mín. 6 caracteres).',
+      'empty':'Preencha todos os campos.',
+    };
+    $('authError').textContent = '⚠️ '+(msgs[err.code]||'Erro ao autenticar. Tente novamente.');
+    $('authError').style.display = 'block';
+  } finally {
+    $('authBtn').disabled = false;
+    $('authBtn').textContent = $('authBtn').dataset.mode==='login' ? 'Entrar' : 'Criar conta';
+  }
+};
+
+window.doLogout = () => signOut(auth);
+
+// ── Screens ─────────────────────────────────────────────────
+function showAuth() {
+  $('authScreen').style.display='flex';
+  $('appScreen').style.display='none';
+  deliveries={};
 }
-function fmtDate(d) {
-  const [y, m, day] = d.split('-');
-  return `${day}/${m}`;
-}
-function today() {
-  return new Date().toISOString().slice(0, 10);
-}
 
-function getFiltered() {
-  const month = document.getElementById('filterMonth').value;
-  if (!month) return deliveries;
-  return deliveries.filter(d => d.date.slice(0, 7) === month);
+function showApp(user) {
+  $('authScreen').style.display='none';
+  $('appScreen').style.display='block';
+  $('headerUser').textContent = user.email;
+  $('listCard').innerHTML = '<div class="spinner"></div>';
+  const r = ref(db, `deliveries/${user.uid}`);
+  if (dbOff) dbOff();
+  dbOff = onValue(r, snap => { deliveries = snap.val()||{}; renderList(); });
 }
 
-function render() {
-  const filtered = getFiltered().slice().sort((a, b) => b.date.localeCompare(a.date));
-  const total = filtered.reduce((s, d) => s + d.valor, 0);
+// ── Render ─────────────────────────────────────────────────
+window.renderList = () => {
+  const month    = $('filterMonth').value;
+  const all      = Object.entries(deliveries).map(([k,v])=>({key:k,...v}));
+  const filtered = (month ? all.filter(d=>d.date.startsWith(month)) : all)
+                    .sort((a,b)=>b.date.localeCompare(a.date));
+  const total    = filtered.reduce((s,d)=>s+Number(d.valor),0);
 
-  // Stats
-  document.getElementById('statCount').textContent = filtered.length;
-  document.getElementById('statTotal').textContent = brl(total);
-  document.getElementById('statAvg').textContent = filtered.length ? brl(total / filtered.length) : '—';
-
-  // Month filter options
-  const sel = document.getElementById('filterMonth');
-  const cur = sel.value;
-  const months = [...new Set(deliveries.map(d => d.date.slice(0, 7)))].sort().reverse();
+  // Rebuild month selector
+  const sel = $('filterMonth'), cur = sel.value;
+  const months = [...new Set(all.map(d=>d.date.slice(0,7)))].sort().reverse();
   sel.innerHTML = '<option value="">Todos os meses</option>' +
-    months.map(m => {
-      const label = new Date(m + '-01').toLocaleDateString('pt-BR', { month: 'long', year: 'numeric' });
-      return `<option value="${m}" ${m === cur ? 'selected' : ''}>${label}</option>`;
+    months.map(m=>{
+      const lbl=new Date(m+'-01').toLocaleDateString('pt-BR',{month:'long',year:'numeric'});
+      return `<option value="${m}"${m===cur?' selected':''}>${lbl}</option>`;
     }).join('');
 
-  // List
-  const list = document.getElementById('listCard');
-  if (filtered.length === 0) {
-    list.innerHTML = '<div class="empty">Nenhuma corrida encontrada</div>';
+  $('statCount').textContent = filtered.length;
+  $('statTotal').textContent = brl(total);
+  $('statAvg').textContent   = filtered.length ? brl(total/filtered.length) : '—';
+
+  const list = $('listCard');
+  if (!filtered.length) {
+    list.innerHTML = `<div class="empty"><div class="empty-icon">📭</div>Nenhuma corrida encontrada</div>`;
   } else {
-    list.innerHTML = filtered.map(d => `
+    list.innerHTML = filtered.map(d=>`
       <div class="delivery-row">
         <div class="date-badge">${fmtDate(d.date)}</div>
         <div class="route">
-          <span class="route-from">${d.origem}</span>
+          <span class="route-from">${esc(d.origem)}</span>
           <span class="route-arrow">→</span>
-          <span>${d.destino}</span>
+          <span>${esc(d.destino)}</span>
         </div>
-        <div class="value">${brl(d.valor)}</div>
-        <div class="row-actions">
-          <button class="icon-btn" title="Editar" onclick="editDelivery(${d.id})">✏️</button>
-          <button class="icon-btn" title="Excluir" onclick="openDeleteModal(${d.id})">🗑️</button>
+        <div class="value-cell">${brl(d.valor)}</div>
+        <div class="row-btns">
+          <button class="icon-btn" onclick="openEdit('${d.key}')">✏️</button>
+          <button class="icon-btn" onclick="openDelete('${d.key}')">🗑️</button>
         </div>
-      </div>
-    `).join('');
+      </div>`).join('');
   }
 
-  // Total bar
-  const bar = document.getElementById('totalBar');
-  if (filtered.length > 0) {
-    bar.style.display = 'flex';
-    const monthSel = document.getElementById('filterMonth').value;
-    const monthName = monthSel
-      ? ' · ' + new Date(monthSel + '-01').toLocaleDateString('pt-BR', { month: 'long' })
-      : '';
-    document.getElementById('totalLabel').textContent = `${filtered.length} corrida${filtered.length !== 1 ? 's' : ''}${monthName}`;
-    document.getElementById('totalValue').textContent = `Total: ${brl(total)}`;
-  } else {
-    bar.style.display = 'none';
-  }
-}
+  const bar = $('totalBar');
+  if (filtered.length) {
+    bar.style.display='flex';
+    const mn = month ? ' · '+new Date(month+'-01').toLocaleDateString('pt-BR',{month:'long'}) : '';
+    $('totalLbl').textContent = `${filtered.length} corrida${filtered.length!==1?'s':''}${mn}`;
+    $('totalVal').textContent = `Total: ${brl(total)}`;
+  } else bar.style.display='none';
+};
 
-function openForm() {
-  editId = null;
-  document.getElementById('formTitle').textContent = '➕ Nova corrida';
-  document.getElementById('fDate').value = today();
-  document.getElementById('fOrigem').value = '';
-  document.getElementById('fDestino').value = '';
-  document.getElementById('fValor').value = '';
-  document.getElementById('formCard').classList.add('open');
-  document.getElementById('fOrigem').focus();
-}
+// ── Form ───────────────────────────────────────────────────
+window.openForm = () => {
+  editKey=null;
+  $('formTitle').textContent='➕ Nova corrida';
+  $('fDate').value=todayStr(); $('fOrigem').value=''; $('fDestino').value=''; $('fValor').value='';
+  $('formCard').style.display='block'; $('fOrigem').focus();
+};
 
-function closeForm() {
-  editId = null;
-  document.getElementById('formCard').classList.remove('open');
-}
+window.openEdit = key => {
+  const d=deliveries[key]; if(!d) return;
+  editKey=key;
+  $('formTitle').textContent='✏️ Editar corrida';
+  $('fDate').value=d.date; $('fOrigem').value=d.origem; $('fDestino').value=d.destino; $('fValor').value=String(d.valor);
+  $('formCard').style.display='block';
+};
 
-function saveDelivery() {
-  const date = document.getElementById('fDate').value;
-  const origem = document.getElementById('fOrigem').value.trim();
-  const destino = document.getElementById('fDestino').value.trim();
-  const valorStr = document.getElementById('fValor').value.replace(',', '.');
-  const valor = parseFloat(valorStr);
-  if (!date || !origem || !destino || isNaN(valor)) {
-    alert('Preencha todos os campos corretamente.');
-    return;
-  }
-  if (editId !== null) {
-    deliveries = deliveries.map(d => d.id === editId ? { ...d, date, origem, destino, valor } : d);
-  } else {
-    deliveries.push({ id: Date.now(), date, origem, destino, valor });
-  }
+window.closeForm = () => { $('formCard').style.display='none'; editKey=null; };
+
+window.saveDelivery = async () => {
+  const date=  $('fDate').value;
+  const origem=$('fOrigem').value.trim();
+  const destino=$('fDestino').value.trim();
+  const valor= parseFloat($('fValor').value.replace(',','.'));
+  if (!date||!origem||!destino||isNaN(valor)) { alert('Preencha todos os campos corretamente.'); return; }
+  const data={date,origem,destino,valor};
+  const uid=currentUser.uid;
+  if (editKey) await update(ref(db,`deliveries/${uid}/${editKey}`),data);
+  else         await push(ref(db,`deliveries/${uid}`),data);
   closeForm();
-  render();
-}
+};
 
-function editDelivery(id) {
-  const d = deliveries.find(x => x.id === id);
-  if (!d) return;
-  editId = id;
-  document.getElementById('formTitle').textContent = '✏️ Editar corrida';
-  document.getElementById('fDate').value = d.date;
-  document.getElementById('fOrigem').value = d.origem;
-  document.getElementById('fDestino').value = d.destino;
-  document.getElementById('fValor').value = String(d.valor);
-  document.getElementById('formCard').classList.add('open');
-}
-
-function openDeleteModal(id) {
-  deleteId = id;
-  document.getElementById('deleteModal').classList.add('open');
-}
-function closeDeleteModal() {
-  deleteId = null;
-  document.getElementById('deleteModal').classList.remove('open');
-}
-function confirmDelete() {
-  deliveries = deliveries.filter(d => d.id !== deleteId);
+// ── Delete ─────────────────────────────────────────────────
+window.openDelete       = key => { deleteKey=key; $('deleteModal').classList.add('open'); };
+window.closeDeleteModal = ()  => { deleteKey=null; $('deleteModal').classList.remove('open'); };
+window.confirmDelete    = async () => {
+  if (!deleteKey) return;
+  await remove(ref(db,`deliveries/${currentUser.uid}/${deleteKey}`));
   closeDeleteModal();
-  render();
-}
-
-render();
+};
 </script>
 </body>
 </html>
