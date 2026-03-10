@@ -1,0 +1,382 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>🏍️ Motoboy Tracker</title>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet"/>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { background: #0f1117; color: #e8e8e8; font-family: 'Syne', sans-serif; min-height: 100vh; padding-bottom: 60px; }
+  ::-webkit-scrollbar { width: 4px; }
+  ::-webkit-scrollbar-thumb { background: #f97316; border-radius: 2px; }
+
+  /* Header */
+  .header {
+    background: linear-gradient(135deg, #1a1d27, #141620);
+    border-bottom: 1px solid #1e2130;
+    padding: 20px 24px;
+    position: sticky; top: 0; z-index: 10;
+    display: flex; align-items: center; justify-content: space-between; gap: 16px;
+    flex-wrap: wrap;
+  }
+  .logo { display: flex; align-items: center; gap: 10px; }
+  .logo-text { font-size: 22px; font-weight: 800; color: #f97316; }
+  .logo-sub { font-size: 11px; color: #555; font-family: 'JetBrains Mono', monospace; margin-top: 2px; }
+  .header-right { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
+
+  /* Buttons */
+  .btn-orange {
+    background: #f97316; color: #fff; border: none; border-radius: 8px;
+    padding: 10px 20px; font-family: 'Syne', sans-serif; font-weight: 700;
+    font-size: 14px; cursor: pointer; transition: background 0.15s; white-space: nowrap;
+  }
+  .btn-orange:hover { background: #ea6c0a; }
+  .btn-ghost {
+    background: transparent; color: #888; border: 1px solid #2a2d3a;
+    border-radius: 8px; padding: 9px 16px; font-family: 'Syne', sans-serif;
+    font-weight: 600; font-size: 13px; cursor: pointer; transition: all 0.15s;
+  }
+  .btn-ghost:hover { border-color: #555; color: #ccc; }
+  .btn-red { background: #ef4444; }
+  .btn-red:hover { background: #dc2626; }
+
+  /* Field */
+  .field {
+    background: #1a1d27; border: 1px solid #2a2d3a; border-radius: 8px;
+    color: #e8e8e8; font-family: 'Syne', sans-serif; font-size: 14px;
+    padding: 10px 14px; width: 100%; transition: border-color 0.15s;
+  }
+  .field:focus { outline: none; border-color: #f97316; }
+  .field::placeholder { color: #555; }
+
+  /* Main */
+  .main { max-width: 680px; margin: 0 auto; padding: 0 20px; }
+
+  /* Stats */
+  .stats { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 12px; margin: 20px 0; }
+  .stat-card {
+    background: #1a1d27; border: 1px solid #1e2130; border-radius: 12px; padding: 14px 16px;
+  }
+  .stat-card.accent { background: linear-gradient(135deg, #f97316, #ea580c); border: none; }
+  .stat-icon { font-size: 18px; }
+  .stat-value { font-size: 16px; font-weight: 800; margin-top: 4px; font-family: 'JetBrains Mono', monospace; }
+  .stat-card.accent .stat-value { color: #fff; }
+  .stat-label { font-size: 11px; color: #555; font-weight: 600; margin-top: 2px; }
+  .stat-card.accent .stat-label { color: rgba(255,255,255,0.7); }
+
+  /* Form */
+  .form-card {
+    background: #1a1d27; border: 1px solid #f97316; border-radius: 14px;
+    padding: 20px; margin-bottom: 20px; display: none;
+  }
+  .form-card.open { display: block; }
+  .form-title { font-weight: 700; margin-bottom: 16px; font-size: 15px; }
+  .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+  .form-label { font-size: 11px; color: #888; margin-bottom: 4px; font-weight: 600; }
+  .form-actions { display: flex; gap: 10px; margin-top: 16px; justify-content: flex-end; }
+
+  /* List */
+  .list-card {
+    background: #1a1d27; border: 1px solid #1e2130; border-radius: 14px; overflow: hidden;
+  }
+  .delivery-row {
+    display: flex; align-items: center; padding: 14px 16px; gap: 12px;
+    border-bottom: 1px solid #1e2130; transition: background 0.15s; cursor: default;
+  }
+  .delivery-row:last-child { border-bottom: none; }
+  .delivery-row:hover { background: #1e2130; }
+  .date-badge {
+    min-width: 38px; background: #141620; border-radius: 8px; padding: 6px 4px;
+    text-align: center; font-family: 'JetBrains Mono', monospace; font-size: 12px;
+    font-weight: 600; color: #f97316; line-height: 1.3; flex-shrink: 0;
+  }
+  .route { flex: 1; font-size: 14px; font-weight: 600; display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
+  .route-from { color: #aaa; }
+  .route-arrow { color: #f97316; font-size: 12px; }
+  .value { font-family: 'JetBrains Mono', monospace; font-weight: 600; font-size: 14px; color: #4ade80; min-width: 72px; text-align: right; }
+  .row-actions { display: flex; gap: 2px; }
+  .icon-btn {
+    background: none; border: none; cursor: pointer; padding: 4px 6px;
+    border-radius: 4px; font-size: 14px; transition: background 0.15s;
+  }
+  .icon-btn:hover { background: #2a2d3a; }
+
+  /* Footer total */
+  .total-bar {
+    display: flex; justify-content: space-between; align-items: center;
+    margin-top: 16px; padding: 14px 20px; background: #1a1d27;
+    border-radius: 12px; border: 1px solid #1e2130;
+  }
+  .total-label { color: #888; font-size: 13px; }
+  .total-value { font-family: 'JetBrains Mono', monospace; font-weight: 700; font-size: 16px; color: #f97316; }
+
+  /* Modal */
+  .modal-overlay {
+    position: fixed; inset: 0; background: rgba(0,0,0,0.7);
+    display: none; align-items: center; justify-content: center; z-index: 100;
+  }
+  .modal-overlay.open { display: flex; }
+  .modal {
+    background: #1a1d27; border: 1px solid #2a2d3a; border-radius: 14px;
+    padding: 28px; max-width: 300px; width: 90%; text-align: center;
+  }
+  .modal-icon { font-size: 32px; margin-bottom: 12px; }
+  .modal-title { font-weight: 700; margin-bottom: 8px; }
+  .modal-sub { color: #888; font-size: 13px; margin-bottom: 20px; }
+  .modal-actions { display: flex; gap: 10px; justify-content: center; }
+
+  .empty { padding: 40px; text-align: center; color: #555; }
+
+  @media (max-width: 480px) {
+    .stats { grid-template-columns: 1fr 1fr; }
+    .form-grid { grid-template-columns: 1fr; }
+    .stat-card:last-child { grid-column: span 2; }
+  }
+</style>
+</head>
+<body>
+
+<!-- Header -->
+<div class="header">
+  <div class="logo">
+    <span style="font-size:26px">🏍️</span>
+    <div>
+      <div class="logo-text">Motoboy</div>
+      <div class="logo-sub">controle de corridas</div>
+    </div>
+  </div>
+  <div class="header-right">
+    <select class="field" id="filterMonth" style="width:auto;font-size:13px" onchange="render()">
+      <option value="">Todos os meses</option>
+    </select>
+    <button class="btn-orange" onclick="openForm()">+ Corrida</button>
+  </div>
+</div>
+
+<div class="main">
+
+  <!-- Stats -->
+  <div class="stats">
+    <div class="stat-card">
+      <div class="stat-icon">📦</div>
+      <div class="stat-value" id="statCount">0</div>
+      <div class="stat-label">Corridas</div>
+    </div>
+    <div class="stat-card accent">
+      <div class="stat-icon">💰</div>
+      <div class="stat-value" id="statTotal">R$ 0</div>
+      <div class="stat-label">Total</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-icon">📊</div>
+      <div class="stat-value" id="statAvg">—</div>
+      <div class="stat-label">Média</div>
+    </div>
+  </div>
+
+  <!-- Form -->
+  <div class="form-card" id="formCard">
+    <div class="form-title" id="formTitle">➕ Nova corrida</div>
+    <div class="form-grid">
+      <div>
+        <div class="form-label">DATA</div>
+        <input type="date" class="field" id="fDate"/>
+      </div>
+      <div>
+        <div class="form-label">VALOR (R$)</div>
+        <input type="text" class="field" id="fValor" placeholder="52,00"/>
+      </div>
+      <div>
+        <div class="form-label">ORIGEM</div>
+        <input type="text" class="field" id="fOrigem" placeholder="Ex: Bento Ribeiro"/>
+      </div>
+      <div>
+        <div class="form-label">DESTINO</div>
+        <input type="text" class="field" id="fDestino" placeholder="Ex: Botafogo"/>
+      </div>
+    </div>
+    <div class="form-actions">
+      <button class="btn-ghost" onclick="closeForm()">Cancelar</button>
+      <button class="btn-orange" onclick="saveDelivery()">Salvar</button>
+    </div>
+  </div>
+
+  <!-- List -->
+  <div class="list-card" id="listCard"></div>
+
+  <!-- Total bar -->
+  <div class="total-bar" id="totalBar" style="display:none">
+    <span class="total-label" id="totalLabel"></span>
+    <span class="total-value" id="totalValue"></span>
+  </div>
+
+</div>
+
+<!-- Delete modal -->
+<div class="modal-overlay" id="deleteModal">
+  <div class="modal">
+    <div class="modal-icon">🗑️</div>
+    <div class="modal-title">Excluir corrida?</div>
+    <div class="modal-sub">Essa ação não pode ser desfeita.</div>
+    <div class="modal-actions">
+      <button class="btn-ghost" onclick="closeDeleteModal()">Cancelar</button>
+      <button class="btn-orange btn-red" onclick="confirmDelete()">Excluir</button>
+    </div>
+  </div>
+</div>
+
+<script>
+let deliveries = [
+  { id: 1, date: "2025-02-23", origem: "Bento Ribeiro", destino: "Botafogo", valor: 52 },
+  { id: 2, date: "2025-02-26", origem: "Bento Ribeiro", destino: "Botafogo", valor: 52 },
+  { id: 3, date: "2025-02-27", origem: "Bento Ribeiro", destino: "Nova América", valor: 37 },
+  { id: 4, date: "2025-03-02", origem: "Botafogo", destino: "Bento Ribeiro", valor: 52 },
+  { id: 5, date: "2025-03-03", origem: "Bento Ribeiro", destino: "Lagoa", valor: 55 },
+  { id: 6, date: "2025-03-03", origem: "Nova América", destino: "Bento Ribeiro", valor: 37 },
+  { id: 7, date: "2025-03-03", origem: "Bento Ribeiro", destino: "Pc da Bandeira / Botafogo", valor: 65 },
+  { id: 8, date: "2025-03-04", origem: "Bento Ribeiro", destino: "Nova América", valor: 45 },
+  { id: 9, date: "2025-03-05", origem: "Bento Ribeiro", destino: "Tijuca", valor: 37 },
+];
+
+let editId = null;
+let deleteId = null;
+
+function brl(v) {
+  return v.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+}
+function fmtDate(d) {
+  const [y, m, day] = d.split('-');
+  return `${day}/${m}`;
+}
+function today() {
+  return new Date().toISOString().slice(0, 10);
+}
+
+function getFiltered() {
+  const month = document.getElementById('filterMonth').value;
+  if (!month) return deliveries;
+  return deliveries.filter(d => d.date.slice(0, 7) === month);
+}
+
+function render() {
+  const filtered = getFiltered().slice().sort((a, b) => b.date.localeCompare(a.date));
+  const total = filtered.reduce((s, d) => s + d.valor, 0);
+
+  // Stats
+  document.getElementById('statCount').textContent = filtered.length;
+  document.getElementById('statTotal').textContent = brl(total);
+  document.getElementById('statAvg').textContent = filtered.length ? brl(total / filtered.length) : '—';
+
+  // Month filter options
+  const sel = document.getElementById('filterMonth');
+  const cur = sel.value;
+  const months = [...new Set(deliveries.map(d => d.date.slice(0, 7)))].sort().reverse();
+  sel.innerHTML = '<option value="">Todos os meses</option>' +
+    months.map(m => {
+      const label = new Date(m + '-01').toLocaleDateString('pt-BR', { month: 'long', year: 'numeric' });
+      return `<option value="${m}" ${m === cur ? 'selected' : ''}>${label}</option>`;
+    }).join('');
+
+  // List
+  const list = document.getElementById('listCard');
+  if (filtered.length === 0) {
+    list.innerHTML = '<div class="empty">Nenhuma corrida encontrada</div>';
+  } else {
+    list.innerHTML = filtered.map(d => `
+      <div class="delivery-row">
+        <div class="date-badge">${fmtDate(d.date)}</div>
+        <div class="route">
+          <span class="route-from">${d.origem}</span>
+          <span class="route-arrow">→</span>
+          <span>${d.destino}</span>
+        </div>
+        <div class="value">${brl(d.valor)}</div>
+        <div class="row-actions">
+          <button class="icon-btn" title="Editar" onclick="editDelivery(${d.id})">✏️</button>
+          <button class="icon-btn" title="Excluir" onclick="openDeleteModal(${d.id})">🗑️</button>
+        </div>
+      </div>
+    `).join('');
+  }
+
+  // Total bar
+  const bar = document.getElementById('totalBar');
+  if (filtered.length > 0) {
+    bar.style.display = 'flex';
+    const monthSel = document.getElementById('filterMonth').value;
+    const monthName = monthSel
+      ? ' · ' + new Date(monthSel + '-01').toLocaleDateString('pt-BR', { month: 'long' })
+      : '';
+    document.getElementById('totalLabel').textContent = `${filtered.length} corrida${filtered.length !== 1 ? 's' : ''}${monthName}`;
+    document.getElementById('totalValue').textContent = `Total: ${brl(total)}`;
+  } else {
+    bar.style.display = 'none';
+  }
+}
+
+function openForm() {
+  editId = null;
+  document.getElementById('formTitle').textContent = '➕ Nova corrida';
+  document.getElementById('fDate').value = today();
+  document.getElementById('fOrigem').value = '';
+  document.getElementById('fDestino').value = '';
+  document.getElementById('fValor').value = '';
+  document.getElementById('formCard').classList.add('open');
+  document.getElementById('fOrigem').focus();
+}
+
+function closeForm() {
+  editId = null;
+  document.getElementById('formCard').classList.remove('open');
+}
+
+function saveDelivery() {
+  const date = document.getElementById('fDate').value;
+  const origem = document.getElementById('fOrigem').value.trim();
+  const destino = document.getElementById('fDestino').value.trim();
+  const valorStr = document.getElementById('fValor').value.replace(',', '.');
+  const valor = parseFloat(valorStr);
+  if (!date || !origem || !destino || isNaN(valor)) {
+    alert('Preencha todos os campos corretamente.');
+    return;
+  }
+  if (editId !== null) {
+    deliveries = deliveries.map(d => d.id === editId ? { ...d, date, origem, destino, valor } : d);
+  } else {
+    deliveries.push({ id: Date.now(), date, origem, destino, valor });
+  }
+  closeForm();
+  render();
+}
+
+function editDelivery(id) {
+  const d = deliveries.find(x => x.id === id);
+  if (!d) return;
+  editId = id;
+  document.getElementById('formTitle').textContent = '✏️ Editar corrida';
+  document.getElementById('fDate').value = d.date;
+  document.getElementById('fOrigem').value = d.origem;
+  document.getElementById('fDestino').value = d.destino;
+  document.getElementById('fValor').value = String(d.valor);
+  document.getElementById('formCard').classList.add('open');
+}
+
+function openDeleteModal(id) {
+  deleteId = id;
+  document.getElementById('deleteModal').classList.add('open');
+}
+function closeDeleteModal() {
+  deleteId = null;
+  document.getElementById('deleteModal').classList.remove('open');
+}
+function confirmDelete() {
+  deliveries = deliveries.filter(d => d.id !== deleteId);
+  closeDeleteModal();
+  render();
+}
+
+render();
+</script>
+</body>
+</html>
