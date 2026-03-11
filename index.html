@@ -98,6 +98,19 @@ input::placeholder{color:var(--muted);}
 .row-btns{display:flex;gap:2px;flex-shrink:0;}
 .icon-btn{background:none;border:none;cursor:pointer;padding:5px 7px;border-radius:6px;font-size:14px;transition:background .15s;}
 .icon-btn:hover{background:var(--border);}
+/* CLIENT GROUP */
+.client-group{margin-bottom:14px;}
+.client-header{display:flex;align-items:center;justify-content:space-between;padding:10px 16px;background:var(--card2);border-bottom:1px solid var(--border);cursor:pointer;user-select:none;transition:background .15s;}
+.client-header:hover{background:#16192a;}
+.client-name{font-weight:700;font-size:14px;display:flex;align-items:center;gap:8px;}
+.client-avatar{width:28px;height:28px;border-radius:50%;background:var(--accent);display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:800;color:#fff;flex-shrink:0;}
+.client-meta{display:flex;align-items:center;gap:12px;}
+.client-count{font-size:11px;color:var(--muted);font-family:'JetBrains Mono',monospace;}
+.client-total{font-family:'JetBrains Mono',monospace;font-weight:700;font-size:14px;color:var(--green);}
+.client-chevron{color:var(--muted);font-size:12px;transition:transform .2s;}
+.client-chevron.open{transform:rotate(180deg);}
+.client-rows{display:none;}
+.client-rows.open{display:block;}
 /* TOTAL BAR */
 .total-bar{display:flex;justify-content:space-between;align-items:center;padding:14px 18px;background:var(--card);border-radius:12px;border:1px solid var(--border);margin-bottom:20px;}
 .total-lbl{color:var(--sub);font-size:13px;}.total-val{font-family:'JetBrains Mono',monospace;font-weight:800;font-size:16px;}
@@ -189,13 +202,17 @@ input::placeholder{color:var(--muted);}
       <div class="stats stats-3">
         <div class="stat"><div class="stat-icon">📦</div><div class="stat-val" id="sCorCount">0</div><div class="stat-lbl">Corridas</div></div>
         <div class="stat accent"><div class="stat-icon">💰</div><div class="stat-val" id="sCorTotal">R$ 0</div><div class="stat-lbl">Receita</div></div>
-        <div class="stat"><div class="stat-icon">📊</div><div class="stat-val" id="sCorAvg">—</div><div class="stat-lbl">Média / corrida</div></div>
+        <div class="stat"><div class="stat-icon">👤</div><div class="stat-val" id="sCorClients">0</div><div class="stat-lbl">Clientes</div></div>
       </div>
       <div class="form-card" id="formCorrida" style="display:none">
         <div class="form-card-title" id="formCorridaTitle">➕ Nova corrida</div>
         <div class="form-grid">
           <div><label class="form-label">Data</label><input class="field" id="cDate" type="date"/></div>
           <div><label class="form-label">Valor (R$)</label><input class="field" id="cValor" type="text" placeholder="52,00"/></div>
+          <div style="grid-column:span 2"><label class="form-label">Cliente</label>
+            <input class="field" id="cCliente" type="text" placeholder="Ex: Andre Motoboy" list="clientesList" autocomplete="off"/>
+            <datalist id="clientesList"></datalist>
+          </div>
           <div><label class="form-label">Origem</label><input class="field" id="cOrigem" type="text" placeholder="Ex: Bento Ribeiro"/></div>
           <div><label class="form-label">Destino</label><input class="field" id="cDestino" type="text" placeholder="Ex: Botafogo"/></div>
         </div>
@@ -204,7 +221,12 @@ input::placeholder{color:var(--muted);}
           <button class="btn btn-primary" onclick="saveDelivery()">Salvar</button>
         </div>
       </div>
-      <div style="display:flex;justify-content:flex-end;margin-bottom:12px;"><button class="btn btn-primary btn-sm" onclick="openFormCorrida()">+ Corrida</button></div>
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;gap:10px;flex-wrap:wrap;">
+        <select class="sel" id="filterCliente" onchange="renderCorridas()" style="font-size:13px;">
+          <option value="">Todos os clientes</option>
+        </select>
+        <button class="btn btn-primary btn-sm" onclick="openFormCorrida()">+ Corrida</button>
+      </div>
       <div class="list-card" id="listCorridas"><div class="spinner"></div></div>
       <div class="total-bar" id="totalBarCorridas" style="display:none">
         <span class="total-lbl" id="totalLblCorridas"></span>
@@ -394,12 +416,73 @@ function updateMonthSelectors(){
 }
 
 function renderCorridas(){
-  const f=filtD(), total=f.reduce((s,d)=>s+Number(d.valor),0);
-  $('sCorCount').textContent=f.length; $('sCorTotal').textContent=brl(total); $('sCorAvg').textContent=f.length?brl(total/f.length):'—';
+  const f=filtD();
+  const clientFilter=$('filterCliente').value;
+  const filtered=clientFilter?f.filter(d=>(d.cliente||'Sem cliente')===clientFilter):f;
+  const total=filtered.reduce((s,d)=>s+Number(d.valor),0);
+  const allClients=[...new Set(f.map(d=>d.cliente||'Sem cliente'))].sort();
+
+  // Update client filter dropdown
+  const selC=$('filterCliente'), curC=selC.value;
+  selC.innerHTML='<option value="">Todos os clientes</option>'+allClients.map(c=>`<option value="${esc(c)}"${c===curC?' selected':''}>${esc(c)}</option>`).join('');
+
+  // Update datalist for autocomplete
+  $('clientesList').innerHTML=allClients.map(c=>`<option value="${esc(c)}"/>`).join('');
+
+  $('sCorCount').textContent=filtered.length;
+  $('sCorTotal').textContent=brl(total);
+  $('sCorClients').textContent=allClients.length;
+
   const list=$('listCorridas');
-  list.innerHTML=!f.length?`<div class="empty"><div class="empty-icon">📭</div>Nenhuma corrida encontrada</div>`:f.map(d=>`<div class="delivery-row"><div class="date-badge">${fmtDate(d.date)}</div><div class="route"><span class="route-from">${esc(d.origem)}</span><span style="color:var(--accent);font-size:11px">→</span><span>${esc(d.destino)}</span></div><div class="value-cell value-green">${brl(d.valor)}</div><div class="row-btns"><button class="icon-btn" onclick="openEditC('${d.key}')">✏️</button><button class="icon-btn" onclick="openDel('${d.key}','delivery')">🗑️</button></div></div>`).join('');
+  if(!filtered.length){list.innerHTML=`<div class="empty"><div class="empty-icon">📭</div>Nenhuma corrida encontrada</div>`;
+  } else {
+    // Group by client
+    const groups={};
+    filtered.forEach(d=>{const c=d.cliente||'Sem cliente';if(!groups[c])groups[c]=[];groups[c].push(d);});
+    const sortedClients=Object.keys(groups).sort();
+    list.innerHTML=sortedClients.map(clientName=>{
+      const rows=groups[clientName].sort((a,b)=>b.date.localeCompare(a.date));
+      const clientTotal=rows.reduce((s,d)=>s+Number(d.valor),0);
+      const initials=clientName.split(' ').map(w=>w[0]).slice(0,2).join('').toUpperCase();
+      const groupId='grp-'+clientName.replace(/\W/g,'');
+      return `<div class="client-group">
+        <div class="client-header" onclick="toggleGroup('${groupId}')">
+          <div class="client-name">
+            <div class="client-avatar">${initials}</div>
+            ${esc(clientName)}
+          </div>
+          <div class="client-meta">
+            <span class="client-count">${rows.length} corrida${rows.length!==1?'s':''}</span>
+            <span class="client-total">${brl(clientTotal)}</span>
+            <span class="client-chevron open" id="chev-${groupId}">▼</span>
+          </div>
+        </div>
+        <div class="client-rows open" id="${groupId}">
+          ${rows.map(d=>`<div class="delivery-row">
+            <div class="date-badge">${fmtDate(d.date)}</div>
+            <div class="route">
+              <span class="route-from">${esc(d.origem)}</span>
+              <span style="color:var(--accent);font-size:11px">→</span>
+              <span>${esc(d.destino)}</span>
+            </div>
+            <div class="value-cell value-green">${brl(d.valor)}</div>
+            <div class="row-btns">
+              <button class="icon-btn" onclick="openEditC('${d.key}')">✏️</button>
+              <button class="icon-btn" onclick="openDel('${d.key}','delivery')">🗑️</button>
+            </div>
+          </div>`).join('')}
+        </div>
+      </div>`;
+    }).join('');
+  }
+
   const bar=$('totalBarCorridas');
-  if(f.length){bar.style.display='flex';$('totalLblCorridas').textContent=`${f.length} corrida${f.length!==1?'s':''}`;$('totalValCorridas').textContent=`Total: ${brl(total)}`;}else bar.style.display='none';
+  if(filtered.length){
+    bar.style.display='flex';
+    const cn=clientFilter?` · ${clientFilter}`:'';
+    $('totalLblCorridas').textContent=`${filtered.length} corrida${filtered.length!==1?'s':''}${cn}`;
+    $('totalValCorridas').textContent=`Total: ${brl(total)}`;
+  } else bar.style.display='none';
 }
 
 function renderDespesas(){
@@ -440,16 +523,17 @@ function drawCharts(){
   chartCor=new Chart($('chartCorridas'),{type:'line',data:{labels,datasets:[{label:'Corridas',data:cnt,borderColor:'#f97316',backgroundColor:'rgba(249,115,22,.12)',fill:true,tension:.4,pointBackgroundColor:'#f97316',pointRadius:4}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:legOpts},scales:{...scaleOpts,y:{...scaleOpts.y,ticks:{...scaleOpts.y.ticks,stepSize:1}}}}});
 }
 
-window.openFormCorrida=()=>{editKey=null;$('formCorridaTitle').textContent='➕ Nova corrida';$('cDate').value=todayStr();$('cOrigem').value='';$('cDestino').value='';$('cValor').value='';$('formCorrida').style.display='block';};
+window.toggleGroup=(id)=>{const rows=$(id),chev=$('chev-'+id);rows.classList.toggle('open');chev.classList.toggle('open');};
+window.openFormCorrida=()=>{editKey=null;$('formCorridaTitle').textContent='➕ Nova corrida';$('cDate').value=todayStr();$('cCliente').value='';$('cOrigem').value='';$('cDestino').value='';$('cValor').value='';$('formCorrida').style.display='block';};
 window.openFormDespesa=()=>{editKey=null;$('formDespesaTitle').textContent='➕ Nova despesa';$('eDate').value=todayStr();$('eValor').value='';$('eDesc').value='';$('eCat').value='combustivel';$('formDespesa').style.display='block';};
-window.openEditC=key=>{const d=deliveries[key];if(!d)return;editKey=key;$('formCorridaTitle').textContent='✏️ Editar corrida';$('cDate').value=d.date;$('cOrigem').value=d.origem;$('cDestino').value=d.destino;$('cValor').value=String(d.valor);$('formCorrida').style.display='block';};
+window.openEditC=key=>{const d=deliveries[key];if(!d)return;editKey=key;$('formCorridaTitle').textContent='✏️ Editar corrida';$('cDate').value=d.date;$('cCliente').value=d.cliente||'';$('cOrigem').value=d.origem;$('cDestino').value=d.destino;$('cValor').value=String(d.valor);$('formCorrida').style.display='block';};
 window.openEditE=key=>{const d=expenses[key];if(!d)return;editKey=key;$('formDespesaTitle').textContent='✏️ Editar despesa';$('eDate').value=d.date;$('eValor').value=String(d.valor);$('eCat').value=d.cat;$('eDesc').value=d.desc||'';$('formDespesa').style.display='block';};
 window.closeForm=()=>{$('formCorrida').style.display='none';$('formDespesa').style.display='none';editKey=null;};
 
 window.saveDelivery=async()=>{
-  const date=$('cDate').value,origem=$('cOrigem').value.trim(),destino=$('cDestino').value.trim(),valor=parseFloat($('cValor').value.replace(',','.'));
-  if(!date||!origem||!destino||isNaN(valor)){alert('Preencha todos os campos.');return;}
-  const uid=currentUser.uid, data={date,origem,destino,valor};
+  const date=$('cDate').value,cliente=$('cCliente').value.trim(),origem=$('cOrigem').value.trim(),destino=$('cDestino').value.trim(),valor=parseFloat($('cValor').value.replace(',','.'));
+  if(!date||!cliente||!origem||!destino||isNaN(valor)){alert('Preencha todos os campos, incluindo o cliente.');return;}
+  const uid=currentUser.uid, data={date,cliente,origem,destino,valor};
   if(editKey) await update(ref(db,`deliveries/${uid}/${editKey}`),data); else await push(ref(db,`deliveries/${uid}`),data);
   closeForm();
 };
@@ -500,17 +584,32 @@ window.gerarPDF=()=>{
   if($('pdfIncCorridas').checked&&allD.length){
     if(y>220){doc.addPage();y=20;}
     doc.setFont('helvetica','bold');doc.setFontSize(13);doc.setTextColor(30,32,48);doc.text(`Corridas (${allD.length})`,mg,y);y+=6;
-    doc.setFillColor(249,115,22);doc.rect(mg,y,W-mg*2,7,'F');
-    doc.setTextColor(255,255,255);doc.setFontSize(9);doc.text('Data',mg+2,y+5);doc.text('Origem',mg+22,y+5);doc.text('Destino',mg+82,y+5);doc.text('Valor',W-mg-2,y+5,{align:'right'});y+=7;
-    allD.forEach((d,i)=>{
-      if(y>270){doc.addPage();y=20;}
-      doc.setFillColor(i%2===0?255:248,i%2===0?255:249,i%2===0?255:250);doc.rect(mg,y,W-mg*2,7,'F');
-      const[,dm,dd]=d.date.split('-');
-      doc.setTextColor(50,50,60);doc.setFont('helvetica','normal');doc.setFontSize(9);
-      doc.text(`${dd}/${dm}`,mg+2,y+5);doc.text(String(d.origem).substring(0,26),mg+22,y+5);doc.text(String(d.destino).substring(0,26),mg+82,y+5);
-      doc.setTextColor(22,163,74);doc.setFont('helvetica','bold');doc.text(brl(d.valor),W-mg-2,y+5,{align:'right'});y+=7;
+    // Group by client
+    const cGroups={};
+    allD.forEach(d=>{const c=d.cliente||'Sem cliente';if(!cGroups[c])cGroups[c]=[];cGroups[c].push(d);});
+    Object.keys(cGroups).sort().forEach(clientName=>{
+      const rows=cGroups[clientName];
+      const cTotal=rows.reduce((s,d)=>s+Number(d.valor),0);
+      if(y>255){doc.addPage();y=20;}
+      // Client header
+      doc.setFillColor(249,115,22);doc.rect(mg,y,W-mg*2,8,'F');
+      doc.setTextColor(255,255,255);doc.setFont('helvetica','bold');doc.setFontSize(10);
+      doc.text(clientName,mg+3,y+5.5);doc.text(`${rows.length} corrida${rows.length!==1?'s':''} · ${brl(cTotal)}`,W-mg-2,y+5.5,{align:'right'});y+=8;
+      // Column headers
+      doc.setFillColor(240,242,245);doc.rect(mg,y,W-mg*2,6,'F');
+      doc.setTextColor(120,120,130);doc.setFont('helvetica','normal');doc.setFontSize(8);
+      doc.text('Data',mg+2,y+4.5);doc.text('Origem',mg+22,y+4.5);doc.text('Destino',mg+92,y+4.5);doc.text('Valor',W-mg-2,y+4.5,{align:'right'});y+=6;
+      rows.forEach((d,i)=>{
+        if(y>270){doc.addPage();y=20;}
+        doc.setFillColor(i%2===0?255:248,i%2===0?255:249,i%2===0?255:250);doc.rect(mg,y,W-mg*2,7,'F');
+        const[,dm,dd]=d.date.split('-');
+        doc.setTextColor(50,50,60);doc.setFont('helvetica','normal');doc.setFontSize(9);
+        doc.text(`${dd}/${dm}`,mg+2,y+5);doc.text(String(d.origem).substring(0,30),mg+22,y+5);doc.text(String(d.destino).substring(0,28),mg+92,y+5);
+        doc.setTextColor(22,163,74);doc.setFont('helvetica','bold');doc.text(brl(d.valor),W-mg-2,y+5,{align:'right'});y+=7;
+      });
+      y+=4;
     });
-    doc.setFillColor(240,242,245);doc.rect(mg,y,W-mg*2,8,'F');
+    doc.setFillColor(235,237,242);doc.rect(mg,y,W-mg*2,8,'F');
     doc.setFont('helvetica','bold');doc.setFontSize(10);doc.setTextColor(50,50,60);doc.text('Total corridas:',mg+2,y+6);
     doc.setTextColor(22,163,74);doc.text(brl(totalR),W-mg-2,y+6,{align:'right'});y+=18;
   }
