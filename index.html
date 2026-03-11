@@ -1,4 +1,5 @@
 <!DOCTYPE html>
+
 <html lang="pt-BR">
 <head>
 <meta charset="UTF-8"/>
@@ -155,6 +156,7 @@ input::placeholder{color:var(--muted);}
 <body>
 
 <!-- AUTH -->
+
 <div id="authScreen">
   <div class="auth-card">
     <div class="logo-wrap">
@@ -175,6 +177,7 @@ input::placeholder{color:var(--muted);}
 </div>
 
 <!-- APP -->
+
 <div id="appScreen">
   <div class="header">
     <div class="header-inner">
@@ -197,6 +200,7 @@ input::placeholder{color:var(--muted);}
   </div>
 
   <!-- CORRIDAS -->
+
   <div class="tab-page active" id="page-corridas">
     <div class="main">
       <div class="stats stats-3">
@@ -236,6 +240,7 @@ input::placeholder{color:var(--muted);}
   </div>
 
   <!-- DESPESAS -->
+
   <div class="tab-page" id="page-despesas">
     <div class="main">
       <div class="stats stats-3">
@@ -276,6 +281,7 @@ input::placeholder{color:var(--muted);}
   </div>
 
   <!-- GRAFICOS -->
+
   <div class="tab-page" id="page-graficos">
     <div class="main">
       <div class="lucro-card">
@@ -292,14 +298,16 @@ input::placeholder{color:var(--muted);}
   </div>
 
   <!-- RELATORIO -->
+
   <div class="tab-page" id="page-relatorio">
     <div class="main">
       <div class="pdf-card">
         <div class="pdf-title">📄 Gerar Relatório Mensal</div>
         <div class="pdf-sub">Exporte um PDF completo com corridas e despesas do mês selecionado.</div>
         <div class="form-group"><label class="form-label">Mês do relatório</label><select class="field" id="pdfMonth" style="width:auto;min-width:220px;"><option value="">Selecione um mês</option></select></div>
+        <div class="form-group"><label class="form-label">Filtrar por cliente (opcional)</label><select class="field" id="pdfCliente" style="width:auto;min-width:220px;"><option value="">Todos os clientes</option></select></div>
         <div class="pdf-options">
-          <label class="pdf-option"><input type="checkbox" id="pdfIncCorridas" checked/><span class="pdf-option-label">🏍️ Corridas</span><div class="pdf-option-sub">Lista detalhada de todas as corridas</div></label>
+          <label class="pdf-option"><input type="checkbox" id="pdfIncCorridas" checked/><span class="pdf-option-label">🏍️ Corridas por cliente</span><div class="pdf-option-sub">Corridas agrupadas por cliente</div></label>
           <label class="pdf-option"><input type="checkbox" id="pdfIncDespesas" checked/><span class="pdf-option-label">💸 Despesas</span><div class="pdf-option-sub">Lista detalhada de todas as despesas</div></label>
           <label class="pdf-option"><input type="checkbox" id="pdfIncResumo" checked/><span class="pdf-option-label">📊 Resumo financeiro</span><div class="pdf-option-sub">Receita, despesas e lucro líquido</div></label>
           <label class="pdf-option"><input type="checkbox" id="pdfIncCats" checked/><span class="pdf-option-label">🗂️ Tabela por categoria</span><div class="pdf-option-sub">Despesas agrupadas por tipo</div></label>
@@ -311,6 +319,7 @@ input::placeholder{color:var(--muted);}
 </div>
 
 <!-- Delete Modal -->
+
 <div class="modal-bg" id="deleteModal">
   <div class="modal">
     <div class="modal-icon">🗑️</div>
@@ -344,7 +353,7 @@ const auth  = getAuth(fbApp);
 const db    = getDatabase(fbApp);
 
 let currentUser=null, deliveries={}, expenses={};
-let editKey=null, editType=null, deleteKey=null, deleteType=null;
+let editKeyC=null, editKeyE=null, deleteKey=null, deleteType=null;
 let dbOffD=null, dbOffE=null;
 let chartM=null, chartC=null, chartCor=null;
 
@@ -413,6 +422,11 @@ function updateMonthSelectors(){
   const months=[...new Set([...allD,...allE])].sort().reverse();
   const buildOpts=(sel,cur)=>{sel.innerHTML='<option value="">Todos os meses</option>'+months.map(m=>`<option value="${m}"${m===cur?' selected':''}>${new Date(m+'-01').toLocaleDateString('pt-BR',{month:'long',year:'numeric'})}</option>`).join('');};
   buildOpts($('filterMonth'),getMonth()); buildOpts($('pdfMonth'),$('pdfMonth').value);
+
+  // Populate PDF client filter
+  const allClients=[...new Set(Object.values(deliveries).map(d=>d.cliente||'Sem cliente'))].sort();
+  const selC=$('pdfCliente'), curC=selC.value;
+  selC.innerHTML='<option value="">Todos os clientes</option>'+allClients.map(c=>`<option value="${esc(c)}"${c===curC?' selected':''}>${esc(c)}</option>`).join('');
 }
 
 function renderCorridas(){
@@ -524,17 +538,17 @@ function drawCharts(){
 }
 
 window.toggleGroup=(id)=>{const rows=$(id),chev=$('chev-'+id);rows.classList.toggle('open');chev.classList.toggle('open');};
-window.openFormCorrida=()=>{editKey=null;$('formCorridaTitle').textContent='➕ Nova corrida';$('cDate').value=todayStr();$('cCliente').value='';$('cOrigem').value='';$('cDestino').value='';$('cValor').value='';$('formCorrida').style.display='block';};
-window.openFormDespesa=()=>{editKey=null;$('formDespesaTitle').textContent='➕ Nova despesa';$('eDate').value=todayStr();$('eValor').value='';$('eDesc').value='';$('eCat').value='combustivel';$('formDespesa').style.display='block';};
-window.openEditC=key=>{const d=deliveries[key];if(!d)return;editKey=key;$('formCorridaTitle').textContent='✏️ Editar corrida';$('cDate').value=d.date;$('cCliente').value=d.cliente||'';$('cOrigem').value=d.origem;$('cDestino').value=d.destino;$('cValor').value=String(d.valor);$('formCorrida').style.display='block';};
-window.openEditE=key=>{const d=expenses[key];if(!d)return;editKey=key;$('formDespesaTitle').textContent='✏️ Editar despesa';$('eDate').value=d.date;$('eValor').value=String(d.valor);$('eCat').value=d.cat;$('eDesc').value=d.desc||'';$('formDespesa').style.display='block';};
-window.closeForm=()=>{$('formCorrida').style.display='none';$('formDespesa').style.display='none';editKey=null;};
+window.openFormCorrida=()=>{editKeyC=null;$('formCorridaTitle').textContent='➕ Nova corrida';$('cDate').value=todayStr();$('cCliente').value='';$('cOrigem').value='';$('cDestino').value='';$('cValor').value='';$('formCorrida').style.display='block';};
+window.openFormDespesa=()=>{editKeyE=null;$('formDespesaTitle').textContent='➕ Nova despesa';$('eDate').value=todayStr();$('eValor').value='';$('eDesc').value='';$('eCat').value='combustivel';$('formDespesa').style.display='block';};
+window.openEditC=key=>{const d=deliveries[key];if(!d)return;editKeyC=key;$('formCorridaTitle').textContent='✏️ Editar corrida';$('cDate').value=d.date;$('cCliente').value=d.cliente||'';$('cOrigem').value=d.origem;$('cDestino').value=d.destino;$('cValor').value=String(d.valor);$('formCorrida').style.display='block';};
+window.openEditE=key=>{const d=expenses[key];if(!d)return;editKeyE=key;$('formDespesaTitle').textContent='✏️ Editar despesa';$('eDate').value=d.date;$('eValor').value=String(d.valor);$('eCat').value=d.cat;$('eDesc').value=d.desc||'';$('formDespesa').style.display='block';};
+window.closeForm=()=>{$('formCorrida').style.display='none';$('formDespesa').style.display='none';editKeyC=null;editKeyE=null;};
 
 window.saveDelivery=async()=>{
   const date=$('cDate').value,cliente=$('cCliente').value.trim(),origem=$('cOrigem').value.trim(),destino=$('cDestino').value.trim(),valor=parseFloat($('cValor').value.replace(',','.'));
   if(!date||!cliente||!origem||!destino||isNaN(valor)){alert('Preencha todos os campos, incluindo o cliente.');return;}
   const uid=currentUser.uid, data={date,cliente,origem,destino,valor};
-  if(editKey) await update(ref(db,`deliveries/${uid}/${editKey}`),data); else await push(ref(db,`deliveries/${uid}`),data);
+  if(editKeyC) await update(ref(db,`deliveries/${uid}/${editKeyC}`),data); else await push(ref(db,`deliveries/${uid}`),data);
   closeForm();
 };
 
@@ -542,7 +556,7 @@ window.saveExpense=async()=>{
   const date=$('eDate').value,valor=parseFloat($('eValor').value.replace(',','.')),cat=$('eCat').value,desc=$('eDesc').value.trim();
   if(!date||isNaN(valor)){alert('Preencha data e valor.');return;}
   const uid=currentUser.uid, data={date,valor,cat,desc};
-  if(editKey) await update(ref(db,`expenses/${uid}/${editKey}`),data); else await push(ref(db,`expenses/${uid}`),data);
+  if(editKeyE) await update(ref(db,`expenses/${uid}/${editKeyE}`),data); else await push(ref(db,`expenses/${uid}`),data);
   closeForm();
 };
 
@@ -557,9 +571,11 @@ window.confirmDelete=async()=>{
 window.gerarPDF=()=>{
   const month=$('pdfMonth').value;
   if(!month){alert('Selecione um mês para gerar o relatório.');return;}
+  const clienteFilter=$('pdfCliente').value;
   const{jsPDF}=window.jspdf;
   const doc=new jsPDF({unit:'mm',format:'a4'});
-  const allD=Object.values(deliveries).filter(d=>d.date.startsWith(month)).sort((a,b)=>a.date.localeCompare(b.date));
+  let allD=Object.values(deliveries).filter(d=>d.date.startsWith(month)).sort((a,b)=>a.date.localeCompare(b.date));
+  if(clienteFilter) allD=allD.filter(d=>(d.cliente||'Sem cliente')===clienteFilter);
   const allE=Object.values(expenses).filter(d=>d.date.startsWith(month)).sort((a,b)=>a.date.localeCompare(b.date));
   const totalR=allD.reduce((s,d)=>s+Number(d.valor),0);
   const totalE=allE.reduce((s,d)=>s+Number(d.valor),0);
@@ -568,8 +584,10 @@ window.gerarPDF=()=>{
   const W=210,mg=18;let y=mg;
 
   doc.setFillColor(249,115,22);doc.rect(0,0,W,28,'F');
-  doc.setTextColor(255,255,255);doc.setFont('helvetica','bold');doc.setFontSize(18);doc.text('🏍 Motoboy Tracker',mg,12);
-  doc.setFontSize(11);doc.setFont('helvetica','normal');doc.text('Relatório · '+monthName,mg,20);doc.text(currentUser.email,W-mg,20,{align:'right'});
+  doc.setTextColor(255,255,255);doc.setFont('helvetica','bold');doc.setFontSize(18);doc.text('Motoboy Tracker',mg,12);
+  doc.setFontSize(11);doc.setFont('helvetica','normal');
+  const subtitle=clienteFilter?`Relatório · ${monthName} · ${clienteFilter}`:`Relatório · ${monthName}`;
+  doc.text(subtitle,mg,20);doc.text(currentUser.email,W-mg,20,{align:'right'});
   y=40;
 
   if($('pdfIncResumo').checked){
@@ -653,8 +671,9 @@ window.gerarPDF=()=>{
     doc.setPage(i);doc.setFontSize(8);doc.setTextColor(180,180,190);doc.setFont('helvetica','normal');
     doc.text(`Motoboy Tracker · Gerado em ${new Date().toLocaleDateString('pt-BR')} · Página ${i}/${total}`,W/2,295,{align:'center'});
   }
-  doc.save(`motoboy-${month}.pdf`);
+  doc.save(`motoboy-${month}${clienteFilter?'-'+clienteFilter.replace(/\s+/g,'-'):''}.pdf`);
 };
 </script>
+
 </body>
 </html>
