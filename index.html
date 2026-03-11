@@ -1,5 +1,4 @@
 <!DOCTYPE html>
-
 <html lang="pt-BR">
 <head>
 <meta charset="UTF-8"/>
@@ -156,7 +155,6 @@ input::placeholder{color:var(--muted);}
 <body>
 
 <!-- AUTH -->
-
 <div id="authScreen">
   <div class="auth-card">
     <div class="logo-wrap">
@@ -177,7 +175,6 @@ input::placeholder{color:var(--muted);}
 </div>
 
 <!-- APP -->
-
 <div id="appScreen">
   <div class="header">
     <div class="header-inner">
@@ -200,7 +197,6 @@ input::placeholder{color:var(--muted);}
   </div>
 
   <!-- CORRIDAS -->
-
   <div class="tab-page active" id="page-corridas">
     <div class="main">
       <div class="stats stats-3">
@@ -240,7 +236,6 @@ input::placeholder{color:var(--muted);}
   </div>
 
   <!-- DESPESAS -->
-
   <div class="tab-page" id="page-despesas">
     <div class="main">
       <div class="stats stats-3">
@@ -281,7 +276,6 @@ input::placeholder{color:var(--muted);}
   </div>
 
   <!-- GRAFICOS -->
-
   <div class="tab-page" id="page-graficos">
     <div class="main">
       <div class="lucro-card">
@@ -298,7 +292,6 @@ input::placeholder{color:var(--muted);}
   </div>
 
   <!-- RELATORIO -->
-
   <div class="tab-page" id="page-relatorio">
     <div class="main">
       <div class="pdf-card">
@@ -319,7 +312,6 @@ input::placeholder{color:var(--muted);}
 </div>
 
 <!-- Delete Modal -->
-
 <div class="modal-bg" id="deleteModal">
   <div class="modal">
     <div class="modal-icon">🗑️</div>
@@ -408,6 +400,7 @@ window.showPage=(name,btn)=>{
   document.querySelectorAll('.nav-tab').forEach(t=>t.classList.remove('active'));
   $('page-'+name).classList.add('active'); btn.classList.add('active');
   if(name==='graficos') setTimeout(drawCharts,50);
+  if(name==='relatorio') updateMonthSelectors();
 };
 
 window.renderAll=()=>{renderCorridas();renderDespesas();renderLucro();updateMonthSelectors();};
@@ -416,14 +409,25 @@ function getMonth(){return $('filterMonth').value;}
 function filtD(){const m=getMonth(),all=Object.entries(deliveries).map(([k,v])=>({key:k,...v}));return(m?all.filter(d=>d.date.startsWith(m)):all).sort((a,b)=>b.date.localeCompare(a.date));}
 function filtE(){const m=getMonth(),all=Object.entries(expenses).map(([k,v])=>({key:k,...v}));return(m?all.filter(d=>d.date.startsWith(m)):all).sort((a,b)=>b.date.localeCompare(a.date));}
 
+// Formata "2025-03" → "março de 2025" sem bug de fuso
+function fmtMonth(m){
+  const [y,mo]=m.split('-');
+  return new Date(Number(y),Number(mo)-1,1).toLocaleDateString('pt-BR',{month:'long',year:'numeric'});
+}
+
 function updateMonthSelectors(){
   const allD=Object.values(deliveries).map(d=>d.date.slice(0,7));
   const allE=Object.values(expenses).map(d=>d.date.slice(0,7));
-  const months=[...new Set([...allD,...allE])].sort().reverse();
-  const buildOpts=(sel,cur)=>{sel.innerHTML='<option value="">Todos os meses</option>'+months.map(m=>`<option value="${m}"${m===cur?' selected':''}>${new Date(m+'-01').toLocaleDateString('pt-BR',{month:'long',year:'numeric'})}</option>`).join('');};
-  buildOpts($('filterMonth'),getMonth()); buildOpts($('pdfMonth'),$('pdfMonth').value);
+  const currentMonth=todayStr().slice(0,7);
+  // Sempre inclui o mês atual, mesmo sem dados
+  const months=[...new Set([...allD,...allE,currentMonth])].sort().reverse();
+  const buildOpts=(sel,cur,placeholder)=>{
+    sel.innerHTML=`<option value="">${placeholder}</option>`+months.map(m=>`<option value="${m}"${m===cur?' selected':''}>${fmtMonth(m)}</option>`).join('');
+  };
+  buildOpts($('filterMonth'),getMonth(),'Todos os meses');
+  buildOpts($('pdfMonth'),$('pdfMonth').value,'Selecione um mês');
 
-  // Populate PDF client filter
+  // Popula filtro de cliente do PDF
   const allClients=[...new Set(Object.values(deliveries).map(d=>d.cliente||'Sem cliente'))].sort();
   const selC=$('pdfCliente'), curC=selC.value;
   selC.innerHTML='<option value="">Todos os clientes</option>'+allClients.map(c=>`<option value="${esc(c)}"${c===curC?' selected':''}>${esc(c)}</option>`).join('');
@@ -547,17 +551,21 @@ window.closeForm=()=>{$('formCorrida').style.display='none';$('formDespesa').sty
 window.saveDelivery=async()=>{
   const date=$('cDate').value,cliente=$('cCliente').value.trim(),origem=$('cOrigem').value.trim(),destino=$('cDestino').value.trim(),valor=parseFloat($('cValor').value.replace(',','.'));
   if(!date||!cliente||!origem||!destino||isNaN(valor)){alert('Preencha todos os campos, incluindo o cliente.');return;}
-  const uid=currentUser.uid, data={date,cliente,origem,destino,valor};
-  if(editKeyC) await update(ref(db,`deliveries/${uid}/${editKeyC}`),data); else await push(ref(db,`deliveries/${uid}`),data);
-  closeForm();
+  try{
+    const uid=currentUser.uid, data={date,cliente,origem,destino,valor};
+    if(editKeyC) await update(ref(db,`deliveries/${uid}/${editKeyC}`),data); else await push(ref(db,`deliveries/${uid}`),data);
+    closeForm();
+  }catch(e){alert('Erro ao salvar corrida: '+e.message);}
 };
 
 window.saveExpense=async()=>{
   const date=$('eDate').value,valor=parseFloat($('eValor').value.replace(',','.')),cat=$('eCat').value,desc=$('eDesc').value.trim();
   if(!date||isNaN(valor)){alert('Preencha data e valor.');return;}
-  const uid=currentUser.uid, data={date,valor,cat,desc};
-  if(editKeyE) await update(ref(db,`expenses/${uid}/${editKeyE}`),data); else await push(ref(db,`expenses/${uid}`),data);
-  closeForm();
+  try{
+    const uid=currentUser.uid, data={date,valor,cat,desc};
+    if(editKeyE) await update(ref(db,`expenses/${uid}/${editKeyE}`),data); else await push(ref(db,`expenses/${uid}`),data);
+    closeForm();
+  }catch(e){alert('Erro ao salvar despesa: '+e.message);}
 };
 
 window.openDel=(key,type)=>{deleteKey=key;deleteType=type;$('deleteModal').classList.add('open');};
@@ -674,6 +682,5 @@ window.gerarPDF=()=>{
   doc.save(`motoboy-${month}${clienteFilter?'-'+clienteFilter.replace(/\s+/g,'-'):''}.pdf`);
 };
 </script>
-
 </body>
 </html>
