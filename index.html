@@ -618,7 +618,7 @@ window.gerarPDF=()=>{
   const totalR=allD.reduce((s,d)=>s+Number(d.valor),0);
   const totalE=allE.reduce((s,d)=>s+Number(d.valor),0);
   const lucro=totalR-totalE;
-  const monthName=new Date(month+'-01').toLocaleDateString('pt-BR',{month:'long',year:'numeric'});
+  const monthName=fmtMonth(month);
   const W=210,mg=18;let y=mg;
 
   doc.setFillColor(249,115,22);doc.rect(0,0,W,28,'F');
