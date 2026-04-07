@@ -141,6 +141,11 @@ input::placeholder{color:var(--muted);}
 .pdf-option input[type=checkbox]{accent-color:var(--accent);width:15px;height:15px;margin-right:8px;vertical-align:middle;}
 .pdf-option-label{font-weight:600;font-size:13px;vertical-align:middle;}
 .pdf-option-sub{color:var(--sub);font-size:11px;margin-top:4px;padding-left:23px;}
+.month-chips{display:flex;flex-wrap:wrap;gap:8px;padding:10px 0;}
+.month-chip{display:inline-flex;align-items:center;gap:6px;background:var(--card2);border:1px solid var(--border);border-radius:20px;padding:7px 14px;cursor:pointer;font-size:13px;font-weight:600;transition:all .15s;user-select:none;}
+.month-chip:hover{border-color:var(--accent);color:var(--accent);}
+.month-chip.selected{background:rgba(249,115,22,.15);border-color:var(--accent);color:var(--accent);}
+.month-chip input[type=checkbox]{display:none;}
 @media(max-width:600px){
   .stats-3{grid-template-columns:1fr 1fr;}
   .form-grid,.form-grid-3{grid-template-columns:1fr;}
@@ -306,7 +311,10 @@ input::placeholder{color:var(--muted);}
       <div class="pdf-card">
         <div class="pdf-title">📄 Gerar Relatório Mensal</div>
         <div class="pdf-sub">Exporte um PDF completo com corridas e despesas do mês selecionado.</div>
-        <div class="form-group"><label class="form-label">Mês do relatório</label><select class="field" id="pdfMonth" style="width:auto;min-width:220px;"><option value="">Selecione um mês</option></select></div>
+        <div class="form-group">
+          <label class="form-label">Mês(es) do relatório <span style="color:var(--sub);font-weight:400;text-transform:none;font-size:11px;letter-spacing:0">— selecione quantos quiser</span></label>
+          <div id="pdfMonthPicker" class="month-chips"><span style="color:var(--muted);font-size:13px">Carregando meses...</span></div>
+        </div>
         <div class="form-group"><label class="form-label">Filtrar por cliente (opcional)</label><select class="field" id="pdfCliente" style="width:auto;min-width:220px;"><option value="">Todos os clientes</option></select></div>
         <div class="pdf-options">
           <label class="pdf-option"><input type="checkbox" id="pdfIncCorridas" checked/><span class="pdf-option-label">🏍️ Corridas por cliente</span><div class="pdf-option-sub">Corridas agrupadas por cliente</div></label>
@@ -443,13 +451,19 @@ function updateMonthSelectors(){
   const allD=Object.values(deliveries).map(d=>d.date.slice(0,7));
   const allE=Object.values(expenses).map(d=>d.date.slice(0,7));
   const currentMonth=todayStr().slice(0,7);
-  // Sempre inclui o mês atual, mesmo sem dados
   const months=[...new Set([...allD,...allE,currentMonth])].sort().reverse();
-  const buildOpts=(sel,cur,placeholder)=>{
-    sel.innerHTML=`<option value="">${placeholder}</option>`+months.map(m=>`<option value="${m}"${m===cur?' selected':''}>${fmtMonth(m)}</option>`).join('');
-  };
-  buildOpts($('filterMonth'),getMonth(),'Todos os meses');
-  buildOpts($('pdfMonth'),$('pdfMonth').value,'Selecione um mês');
+
+  // Rebuild filterMonth select
+  const filterSel=$('filterMonth'), curF=filterSel.value;
+  filterSel.innerHTML=`<option value="">Todos os meses</option>`+months.map(m=>`<option value="${m}"${m===curF?' selected':''}>${fmtMonth(m)}</option>`).join('');
+
+  // Rebuild PDF month chips (preserving current selections)
+  const picker=$('pdfMonthPicker');
+  const prevSelected=new Set([...picker.querySelectorAll('input:checked')].map(i=>i.value));
+  picker.innerHTML=months.map(m=>{
+    const sel=prevSelected.has(m);
+    return `<label class="month-chip${sel?' selected':''}"><input type="checkbox" value="${m}"${sel?' checked':''} onchange="this.closest('label').classList.toggle('selected',this.checked)"/>${fmtMonth(m)}</label>`;
+  }).join('');
 
   // Popula filtro de cliente do PDF
   const allClients=[...new Set(Object.values(deliveries).map(d=>d.cliente||'Sem cliente'))].sort();
@@ -607,24 +621,29 @@ window.confirmDelete=async()=>{
 };
 
 window.gerarPDF=()=>{
-  const month=$('pdfMonth').value;
-  if(!month){alert('Selecione um mês para gerar o relatório.');return;}
+  const checkedMonths=[...document.querySelectorAll('#pdfMonthPicker input:checked')].map(i=>i.value).sort();
+  if(!checkedMonths.length){alert('Selecione pelo menos um mês para gerar o relatório.');return;}
   const clienteFilter=$('pdfCliente').value;
   const{jsPDF}=window.jspdf;
   const doc=new jsPDF({unit:'mm',format:'a4'});
-  let allD=Object.values(deliveries).filter(d=>d.date.startsWith(month)).sort((a,b)=>a.date.localeCompare(b.date));
+  let allD=Object.values(deliveries).filter(d=>checkedMonths.some(m=>d.date.startsWith(m))).sort((a,b)=>a.date.localeCompare(b.date));
   if(clienteFilter) allD=allD.filter(d=>(d.cliente||'Sem cliente')===clienteFilter);
-  const allE=Object.values(expenses).filter(d=>d.date.startsWith(month)).sort((a,b)=>a.date.localeCompare(b.date));
+  const allE=Object.values(expenses).filter(d=>checkedMonths.some(m=>d.date.startsWith(m))).sort((a,b)=>a.date.localeCompare(b.date));
   const totalR=allD.reduce((s,d)=>s+Number(d.valor),0);
   const totalE=allE.reduce((s,d)=>s+Number(d.valor),0);
   const lucro=totalR-totalE;
-  const monthName=fmtMonth(month);
+  const monthLabel=checkedMonths.length===1
+    ? fmtMonth(checkedMonths[0])
+    : `${fmtMonth(checkedMonths[0])} – ${fmtMonth(checkedMonths[checkedMonths.length-1])}`;
+  const fileSlug=checkedMonths.length===1
+    ? checkedMonths[0]
+    : `${checkedMonths[0]}_${checkedMonths[checkedMonths.length-1]}`;
   const W=210,mg=18;let y=mg;
 
   doc.setFillColor(249,115,22);doc.rect(0,0,W,28,'F');
   doc.setTextColor(255,255,255);doc.setFont('helvetica','bold');doc.setFontSize(18);doc.text('Motoboy Tracker',mg,12);
   doc.setFontSize(11);doc.setFont('helvetica','normal');
-  const subtitle=clienteFilter?`Relatório · ${monthName} · ${clienteFilter}`:`Relatório · ${monthName}`;
+  const subtitle=clienteFilter?`Relatório · ${monthLabel} · ${clienteFilter}`:`Relatório · ${monthLabel}`;
   doc.text(subtitle,mg,20);doc.text(currentUser.email,W-mg,20,{align:'right'});
   y=40;
 
@@ -709,7 +728,7 @@ window.gerarPDF=()=>{
     doc.setPage(i);doc.setFontSize(8);doc.setTextColor(180,180,190);doc.setFont('helvetica','normal');
     doc.text(`Motoboy Tracker · Gerado em ${new Date().toLocaleDateString('pt-BR')} · Página ${i}/${total}`,W/2,295,{align:'center'});
   }
-  doc.save(`motoboy-${month}${clienteFilter?'-'+clienteFilter.replace(/\s+/g,'-'):''}.pdf`);
+  doc.save(`motoboy-${fileSlug}${clienteFilter?'-'+clienteFilter.replace(/\s+/g,'-'):''}.pdf`);
 };
 </script>
 </body>
